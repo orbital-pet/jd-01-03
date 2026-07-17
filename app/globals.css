@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* The mission runs in the dark. No light mode in orbit. */
+:root {
+  --background: #141838;
+  --foreground: #e8ecf7;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-doodle: "Gaegu", "Comic Sans MS", "Chalkboard SE", cursive;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-doodle);
+}
+
+/* Lopsided corner radii read as a shaky pen stroke — a hand-drawn box, in one property. */
+.doodle-box {
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+}
+
+@keyframes doodle-wiggle {
+  0%,
+  100% {
+    transform: rotate(-1.6deg);
+  }
+  50% {
+    transform: rotate(1.6deg);
+  }
+}
+
+.animate-wiggle {
+  animation: doodle-wiggle 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-wiggle {
+    animation: none;
+  }
+}

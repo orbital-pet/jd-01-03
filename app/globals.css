@@ -1,11 +1,17 @@
+/* 🎨 globals.css — 사이트 전체에 적용되는 전역 스타일 */
+
+/* Tailwind CSS 불러오기 (v4는 이 한 줄이면 끝!) */
 @import "tailwindcss";
 
-/* The mission runs in the dark. No light mode in orbit. */
+/* 우리 사이트의 기본 색을 CSS 변수로 정의.
+   우주 임무는 어둠 속에서 진행됩니다. 궤도에는 라이트 모드가 없어요. 🌑 */
 :root {
-  --background: #141838;
-  --foreground: #e8ecf7;
+  --background: #141838; /* 우주 배경색 */
+  --foreground: #e8ecf7; /* 기본 글자색 */
 }
 
+/* Tailwind v4의 @theme: 위의 CSS 변수를 Tailwind 클래스로도 쓸 수 있게 등록.
+   (예: bg-background, text-foreground 클래스가 생깁니다) */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -17,14 +23,19 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-doodle);
+  font-family: var(--font-doodle); /* 사이트 전체가 손글씨 글꼴! */
 }
 
-/* Lopsided corner radii read as a shaky pen stroke — a hand-drawn box, in one property. */
+/* ✏️ 손으로 그린 상자.
+   border-radius에 슬래시(/)를 쓰면 가로 반지름 / 세로 반지름을 따로 정할 수 있는데,
+   네 모서리를 전부 제각각(255px, 15px...)으로 주면 삐뚤빼뚤한 펜 선처럼 보입니다.
+   속성 하나로 손그림 상자를 만드는 유명한 CSS 트릭이에요. */
 .doodle-box {
   border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
 }
 
+/* 갸우뚱갸우뚱 흔들리는 애니메이션 ("게임 시작!" 버튼에 사용).
+   @keyframes = 애니메이션의 장면표: 0%와 100%에선 왼쪽으로, 50%에선 오른쪽으로 기움. */
 @keyframes doodle-wiggle {
   0%,
   100% {
@@ -36,9 +47,12 @@ body {
 }
 
 .animate-wiggle {
+  /* 2.4초에 한 번, 부드럽게(ease-in-out), 무한 반복 */
   animation: doodle-wiggle 2.4s ease-in-out infinite;
 }
 
+/* ♿ 접근성: OS에서 "움직임 줄이기"를 켠 사용자에게는 흔들림을 끕니다.
+   (움직임에 민감해 어지러움을 느끼는 분들을 위한 배려) */
 @media (prefers-reduced-motion: reduce) {
   .animate-wiggle {
     animation: none;

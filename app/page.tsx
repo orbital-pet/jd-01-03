@@ -6,7 +6,7 @@ const RULES = [
   { color: "#8ecbff", text: "눌러 끌면 분사" },
   { color: "#7ee8b2", text: "잔해 주워 kg" },
   { color: "#66fcf1", text: "연료 셀로 재점화" },
-  { color: "#ff8080", text: "가시는 연료 -" },
+  { color: "#ffce59", text: "⚠ 경고물은 연료 -" },
 ];
 
 export default function Home() {

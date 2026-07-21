@@ -19,15 +19,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { createDoodle } from "../lib/doodle";
-import {
-  BEST_KEY,
-  DOODLE_FONT,
-  type BgStar,
-  drawBackdrop,
-  fitCanvas,
-  seedStars,
-} from "../lib/doodle-art";
+import { BEST_KEY, DOODLE_FONT, SPACE_BG, fitCanvas } from "../lib/doodle-art";
 import { type PilotKind, drawSprite, loadSprites } from "../lib/pilot-sprites";
 import {
   closeAudio,
@@ -186,8 +178,13 @@ export default function JoopsGame() {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const d = createDoodle(ctx);
     const bank = loadSprites();
+    // 배경은 팩의 세로 우주 이미지를 cover로 채운다 (엔티티 스프라이트와 톤을 맞추려고)
+    const bg = typeof window !== "undefined" ? new Image() : null;
+    if (bg) {
+      bg.decoding = "async";
+      bg.src = "/plan/img/bg.svg";
+    }
 
     let w = 0;
     let h = 0;
@@ -196,7 +193,6 @@ export default function JoopsGame() {
     let t = 0;
 
     let phase: Phase = "title";
-    let stars: BgStar[] = [];
 
     // ---- 시뮬레이션 상태 (전부 클로저 지역 변수) ----
     const pet = { x: 0, y: 0 };
@@ -469,15 +465,26 @@ export default function JoopsGame() {
       }
     };
 
+    // 배경 이미지를 화면에 cover로 그린다. 로드 전이면 단색으로 채운다.
+    const drawSpaceBg = () => {
+      ctx.fillStyle = SPACE_BG;
+      ctx.fillRect(-16, -16, w + 32, h + 32); // 화면 흔들림 대비 여유 있게
+      if (bg && bg.complete && bg.naturalWidth > 0) {
+        const s = Math.max(w / bg.naturalWidth, h / bg.naturalHeight);
+        const dw = bg.naturalWidth * s;
+        const dh = bg.naturalHeight * s;
+        ctx.drawImage(bg, (w - dw) / 2, (h - dh) / 2, dw, dh);
+      }
+    };
+
     // ---- draw: 읽기만 한다 ----
     const draw = () => {
-      d.setPhase(Math.floor(t * 7)); // 손그림 "끓는 선"
       ctx.save();
       if (shake > 0) {
         const a = (shake / TUNE.shakeTime) * TUNE.shakeAmp;
         ctx.translate((Math.random() - 0.5) * a, (Math.random() - 0.5) * a);
       }
-      drawBackdrop(ctx, d, w, h, t, stars);
+      drawSpaceBg();
 
       // 잔해
       for (const j of junks) {
@@ -654,7 +661,6 @@ export default function JoopsGame() {
 
     const resize = () => {
       ({ w, h } = fitCanvas(canvas, ctx));
-      stars = seedStars(w, h, 46);
       if (!pet.x) {
         pet.x = w / 2;
         pet.y = h * 0.6;
@@ -714,7 +720,7 @@ export default function JoopsGame() {
             <br />
             잔해를 주워 <span className="text-[#7ee8b2]">kg</span>을 모으고, 연료가 바닥나기 전에
             <br />
-            <span className="text-[#66fcf1]">연료 셀</span>을 먹어요. <span className="text-[#ff8080]">붉은 가시</span>는 연료를 깎아요!
+            <span className="text-[#66fcf1]">연료 셀</span>을 먹어요. <span className="text-[#ffce59]">⚠ 경고물</span>은 연료를 깎아요!
           </p>
           {ui.best > 0 && <p className="rotate-1 text-lg text-[#ffd166]">최고 기록 {ui.best}kg</p>}
           <p className="mt-3 animate-bounce text-2xl font-bold text-[#ffd166]">👆 탭해서 출격!</p>

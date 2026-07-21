@@ -91,6 +91,39 @@ const TUNE = {
 
 const THRUST_COLORS = ["#8ecbff", "#ffd166", "#ff8080"];
 
+// ---- 배경 위성 플라이바이 (충돌 없는 장식) ----------------------------------
+// 멀리 지구 뒤에서 작게 나타나 포물선(2차 베지어)을 그리며 다가와 커지다가 화면
+// 옆으로 빠져나간다. "같은 종족 위성들이 함께 궤도를 돈다"는 느낌으로 팩 스프라이트 재활용.
+const FLYBY_SPRITES = [
+  petSrc(1, "normal"),
+  petSrc(2, "normal"),
+  petSrc(3, "normal", "magnet"),
+  droneSrc("happy"),
+  debrisSrc("solar_fragment"),
+  debrisSrc("antenna_piece"),
+];
+
+/** 2차 베지어 스칼라 평가 */
+const bez = (a: number, b: number, c: number, t: number) => {
+  const u = 1 - t;
+  return u * u * a + 2 * u * t * b + t * t * c;
+};
+
+type Flyby = {
+  sprite: string;
+  t: number; // 0..1 진행도
+  dur: number; // 지속(초)
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number; // 제어점
+  x2: number;
+  y2: number; // 이탈점
+  basePx: number;
+  rot0: number;
+  spin: number;
+};
+
 type Tier = "small" | "medium" | "large";
 type Kind = "chip" | "bolt" | "tank" | "hazard" | "fuel";
 
@@ -258,6 +291,7 @@ export default function JoopsGame() {
       ...DEBRIS_SPRITES.small.map(debrisSrc),
       ...DEBRIS_SPRITES.medium.map(debrisSrc),
       ...DEBRIS_SPRITES.large.map(debrisSrc),
+      ...FLYBY_SPRITES,
     ]);
     const bg = img(BG);
 
@@ -290,6 +324,8 @@ export default function JoopsGame() {
     const junks: Junk[] = [];
     const popups: Popup[] = [];
     const fxs: Fx[] = [];
+    const flybys: Flyby[] = []; // 배경 위성 (장식)
+    let flybyTimer = 0.8;
 
     try {
       best = Number(localStorage.getItem(BEST_KEY)) || 0;
@@ -421,6 +457,32 @@ export default function JoopsGame() {
       pushUi();
     };
 
+    // 배경 위성 하나 스폰: 하단 중앙(지구 뒤)에서 시작해 위로 호를 그려 옆으로 이탈
+    const spawnFlyby = () => {
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      const jit = (a: number) => (Math.random() * 2 - 1) * a;
+      const x0 = w * 0.5 + jit(w * 0.12);
+      const y0 = h * 0.9;
+      const x2 = dir > 0 ? w + 160 : -160;
+      const y2 = h * (0.3 + Math.random() * 0.3);
+      const x1 = (x0 + x2) / 2 + jit(w * 0.1);
+      const y1 = h * (0.08 + Math.random() * 0.14);
+      flybys.push({
+        sprite: FLYBY_SPRITES[(Math.random() * FLYBY_SPRITES.length) | 0],
+        t: 0,
+        dur: 5 + Math.random() * 3,
+        x0,
+        y0,
+        x1,
+        y1,
+        x2,
+        y2,
+        basePx: 42 + Math.random() * 12,
+        rot0: jit(0.4),
+        spin: jit(0.5),
+      });
+    };
+
     // ---- update: 상태만 바꾼다 ----
     const update = (dt: number) => {
       // 이펙트 수명
@@ -433,6 +495,17 @@ export default function JoopsGame() {
       const droneTY = pet.y + 26 + Math.sin(t * 1.3) * 5;
       drone.x += (droneTX - drone.x) * Math.min(1, dt * 4);
       drone.y += (droneTY - drone.y) * Math.min(1, dt * 4);
+
+      // 배경 위성 플라이바이 (모든 페이즈에서 앰비언트하게)
+      flybyTimer -= dt;
+      if (flybyTimer <= 0 && flybys.length < 2) {
+        spawnFlyby();
+        flybyTimer = 3 + Math.random() * 2.5;
+      }
+      for (let i = flybys.length - 1; i >= 0; i--) {
+        flybys[i].t += dt / flybys[i].dur;
+        if (flybys[i].t >= 1) flybys.splice(i, 1);
+      }
 
       if (phase !== "playing") {
         vx -= vx * 1.5 * dt;
@@ -631,6 +704,15 @@ export default function JoopsGame() {
       }
       ctx.translate(ox, oy);
       drawSpaceBg();
+
+      // 배경 위성 플라이바이 — 잔해/펫보다 뒤(먼저)에 그린다
+      for (const f of flybys) {
+        const x = bez(f.x0, f.x1, f.x2, f.t);
+        const y = bez(f.y0, f.y1, f.y2, f.t);
+        const sc = 0.12 + f.t * f.t * 1.3; // 멀리서 작다가 다가올수록 커짐
+        const alpha = (f.t < 0.12 ? f.t / 0.12 : 1) * 0.9; // 등장 페이드인 + 살짝 뒤에 앉히기
+        drawImg(ctx, f.sprite, x, y, f.basePx * sc, f.rot0 + f.spin * f.t * 4, alpha);
+      }
 
       for (const j of junks) {
         const sc = j.eatT >= 0 ? Math.max(0.05, 1 - j.eatT / TUNE.eatAnim) : 1;

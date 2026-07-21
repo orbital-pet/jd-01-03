@@ -27,7 +27,11 @@ import {
   type Emotion,
   FUEL_SRC,
   FX,
+  SKIN_KEY,
+  SKIN_LABEL,
   type Stage,
+  STAGE3_SKINS,
+  type Stage3Skin,
   UI,
   debrisSrc,
   drawImg,
@@ -50,15 +54,18 @@ import {
 
 type Phase = "title" | "playing" | "over";
 
-/** 난이도 — 연료 경제와 스폰 리듬 */
+/** 난이도 — 연료 경제와 스폰 리듬 (진화가 실제로 보이도록 후하게 튜닝) */
 const DIFF = {
-  startFuel: 100,
-  thrustCosts: [3, 8, 18], // 분사 1/2/3단 연료 소모(/s)
-  fuelRefill: 26,
-  hazardDamage: 16,
-  spawnBase: 0.55, // 스폰 간격 기준(초) — ±30% 지터
-  driftGrace: 4, // 연료 0 이후 표류 유예(초)
+  startFuel: 110,
+  thrustCosts: [2.5, 7, 16], // 분사 1/2/3단 연료 소모(/s)
+  fuelRefill: 30,
+  hazardDamage: 14,
+  spawnBase: 0.5, // 스폰 간격 기준(초) — ±30% 지터
+  driftGrace: 4.5, // 연료 0 이후 표류 유예(초)
 };
+
+/** 진화 kg 임계 [2단계, 3단계] — 낮춰서 한 판에 도달 가능하게 */
+const EVOLVE_AT = [45, 110];
 
 /** 손맛 튜닝 — 전체화면(CSS px) 기준 */
 const TUNE = {
@@ -180,7 +187,7 @@ type Fx = { src: string; x: number; y: number; age: number; life: number; px: nu
 const EAT_WORDS = ["냠!", "꿀꺽!", "좋아!", "수거!"];
 
 /** kg → 진화 단계 */
-const stageForKg = (kg: number): Stage => (kg >= 150 ? 3 : kg >= 60 ? 2 : 1);
+const stageForKg = (kg: number): Stage => (kg >= EVOLVE_AT[1] ? 3 : kg >= EVOLVE_AT[0] ? 2 : 1);
 const STAGE_R: Record<Stage, number> = { 1: 26, 2: 30, 3: 34 };
 const STAGE_PX: Record<Stage, number> = { 1: 68, 2: 80, 3: 92 };
 
@@ -195,6 +202,29 @@ export default function JoopsGame() {
     sec: 0,
     stage: 1 as Stage,
   });
+  // 3단계 진화 모습(스킨). ref 는 게임 루프가 매 프레임 읽고, state 는 버튼 하이라이트용.
+  const [skin, setSkinState] = useState<Stage3Skin>("magnet");
+  const skinRef = useRef<Stage3Skin>("magnet");
+
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem(SKIN_KEY) as Stage3Skin | null;
+      if (s && STAGE3_SKINS.includes(s)) {
+        skinRef.current = s;
+        // localStorage 는 마운트 후에만 읽을 수 있어 하이드레이션 이후 1회 반영한다.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSkinState(s);
+      }
+    } catch {}
+  }, []);
+
+  const chooseSkin = (s: Stage3Skin) => {
+    skinRef.current = s;
+    setSkinState(s);
+    try {
+      localStorage.setItem(SKIN_KEY, s);
+    } catch {}
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -644,7 +674,7 @@ export default function JoopsGame() {
       const blink = invincible > 0 && Math.floor(t * 16) % 2 === 1 && phase === "playing";
       if (!blink) {
         const bob = Math.sin(t * 3) * 2;
-        if (!drawImg(ctx, petSrc(stage, currentEmotion()), pet.x, pet.y + bob, shipPx)) {
+        if (!drawImg(ctx, petSrc(stage, currentEmotion(), skinRef.current), pet.x, pet.y + bob, shipPx)) {
           ctx.fillStyle = "#7ee8b2";
           ctx.beginPath();
           ctx.arc(pet.x, pet.y, petR, 0, Math.PI * 2);
@@ -864,9 +894,29 @@ export default function JoopsGame() {
             <br />
             <span className="text-[#66fcf1]">연료 셀</span>로 재점화해요. <span className="text-[#ffce59]">⚠ 경고물</span>은 연료를 깎아요!
           </p>
-          {/* 팩의 드래그 제스처 힌트 */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/plan/img/pack/ui/gesture_drag.svg" alt="" aria-hidden className="mt-2 h-12 w-12 opacity-90" />
+          {/* 3단계 진화 모습(스킨) 선택 */}
+          <div className="pointer-events-auto mt-1 flex flex-col items-center gap-1">
+            <p className="text-sm text-zinc-400">3단계 진화 모습</p>
+            <div className="flex items-center gap-2">
+              {STAGE3_SKINS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => chooseSkin(s)}
+                  aria-pressed={skin === s}
+                  className={`flex flex-col items-center gap-0.5 rounded-xl border-2 px-2 py-1 transition ${
+                    skin === s ? "border-[#7ee8b2] bg-[#7ee8b2]/15" : "border-white/15"
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={petSrc(3, "happy", s)} alt="" aria-hidden className="h-9 w-9" />
+                  <span className={`text-sm font-bold ${skin === s ? "text-[#7ee8b2]" : "text-zinc-300"}`}>
+                    {SKIN_LABEL[s]}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
           {ui.best > 0 && <p className="rotate-1 text-lg text-[#ffd166]">최고 기록 {ui.best}kg</p>}
           <p className="mt-1 animate-bounce text-2xl font-bold text-[#ffd166]">👆 탭해서 출격!</p>
           <Link

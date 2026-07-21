@@ -23,16 +23,26 @@ export type Emotion =
   | "powersave"
   | "data_full";
 
-/** 진화 단계 — 3단계는 자석형(게임의 자석 메커닉과 맞음) */
+/** 진화 단계 — 3단계 모습은 스킨(자석/그물/레이저)으로 선택 */
 export type Stage = 1 | 2 | 3;
-const STAGE_FILE: Record<Stage, string> = {
-  1: "pet_stage1_baby",
-  2: "pet_stage2_junior",
-  3: "pet_stage3_magnet",
+export type Stage3Skin = "magnet" | "net" | "laser";
+export const STAGE3_SKINS: Stage3Skin[] = ["magnet", "net", "laser"];
+export const SKIN_KEY = "sjs-skin";
+export const SKIN_LABEL: Record<Stage3Skin, string> = {
+  magnet: "자석",
+  net: "그물",
+  laser: "레이저",
 };
 
-export function petSrc(stage: Stage, emo: Emotion): string {
-  const base = STAGE_FILE[stage];
+const STAGE12: Record<1 | 2, string> = { 1: "pet_stage1_baby", 2: "pet_stage2_junior" };
+const STAGE3_FILE: Record<Stage3Skin, string> = {
+  magnet: "pet_stage3_magnet",
+  net: "pet_stage3_net",
+  laser: "pet_stage3_laser",
+};
+
+export function petSrc(stage: Stage, emo: Emotion, skin: Stage3Skin = "magnet"): string {
+  const base = stage === 3 ? STAGE3_FILE[skin] : STAGE12[stage];
   return emo === "normal"
     ? `${PACK}/characters/${base}.svg`
     : `${PACK}/characters/emotions/${base}__${emo}.svg`;

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Placeholder small debris (chip). Low mass. Replace freely, keep the filename. -->
+  <g stroke="#5b6a8c" stroke-width="2.5" stroke-linejoin="round">
+    <rect x="14" y="14" width="20" height="20" rx="3" fill="#8ecbff"/>
+    <line x1="24" y1="8" x2="24" y2="14"/>
+    <line x1="24" y1="34" x2="24" y2="40"/>
+    <line x1="8" y1="24" x2="14" y2="24"/>
+    <line x1="34" y1="24" x2="40" y2="24"/>
+  </g>
+  <rect x="20" y="20" width="8" height="8" rx="1.5" fill="#cfd8e6" stroke="none"/>
+</svg>

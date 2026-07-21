@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Placeholder large debris (tank). High mass. Replace freely, keep the filename. -->
+  <g stroke="#7a2f5a" stroke-width="2.5" stroke-linejoin="round">
+    <rect x="10" y="8" width="28" height="32" rx="7" fill="#f9a8d4"/>
+    <line x1="10" y1="18" x2="38" y2="18"/>
+    <line x1="10" y1="30" x2="38" y2="30"/>
+  </g>
+  <line x1="19" y1="24" x2="29" y2="24" stroke="#fff0f6" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

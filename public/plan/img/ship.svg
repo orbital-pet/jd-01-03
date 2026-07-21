@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Placeholder pilot craft. Replace with your own art (keep the filename). -->
+  <g fill="none" stroke="#0f2e22" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M32 8 C46 8 54 18 54 32 C54 47 44 56 32 56 C20 56 10 47 10 32 C10 18 18 8 32 8 Z" fill="#7ee8b2"/>
+    <path d="M12 30 L4 26 L6 36 Z" fill="#8ecbff"/>
+    <path d="M52 30 L60 26 L58 36 Z" fill="#8ecbff"/>
+    <circle cx="32" cy="6" r="2.5" fill="#ffd166" stroke="none"/>
+    <line x1="32" y1="8" x2="32" y2="14"/>
+  </g>
+  <g fill="#0f2e22" stroke="none">
+    <circle cx="25" cy="30" r="3.4"/>
+    <circle cx="39" cy="30" r="3.4"/>
+  </g>
+  <path d="M26 40 Q32 45 38 40" fill="none" stroke="#0f2e22" stroke-width="3" stroke-linecap="round"/>
+  <g fill="#ff8fab" stroke="none" opacity="0.6">
+    <ellipse cx="21" cy="38" rx="3.5" ry="2.4"/>
+    <ellipse cx="43" cy="38" rx="3.5" ry="2.4"/>
+  </g>
+</svg>

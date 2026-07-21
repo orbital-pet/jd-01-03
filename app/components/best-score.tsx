@@ -28,7 +28,7 @@ export default function BestScore() {
 
   return (
     <p className="rotate-1 text-lg text-[#ffd166]">
-      최고 기록 <span className="font-bold">{best}</span>점 · 깰 수 있어요?
+      최고 기록 <span className="font-bold">{best}</span>kg · 깰 수 있어요?
     </p>
   );
 }

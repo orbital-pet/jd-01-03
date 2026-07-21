@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Placeholder fuel cell. Refills fuel / re-ignites. Replace freely, keep the filename. -->
+  <g stroke="#0b3b38" stroke-width="2.5" stroke-linejoin="round">
+    <rect x="16" y="8" width="6" height="4" rx="1" fill="#0b3b38"/>
+    <rect x="12" y="12" width="24" height="30" rx="4" fill="#66fcf1"/>
+  </g>
+  <path d="M26 17 L18 27 L24 27 L22 37 L31 25 L25 25 Z" fill="#0b3b38" stroke="none"/>
+</svg>

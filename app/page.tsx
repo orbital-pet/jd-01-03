@@ -3,9 +3,10 @@ import BestScore from "./components/best-score";
 import DoodleSky from "./components/doodle-sky";
 
 const RULES = [
-  { color: "#8ecbff", text: "쓰레기 냠냠 +10" },
-  { color: "#ffd166", text: "별은 +40" },
-  { color: "#ff8080", text: "가시는 아야!" },
+  { color: "#8ecbff", text: "눌러 끌면 분사" },
+  { color: "#7ee8b2", text: "잔해 주워 kg" },
+  { color: "#66fcf1", text: "연료 셀로 재점화" },
+  { color: "#ff8080", text: "가시는 연료 -" },
 ];
 
 export default function Home() {
@@ -34,9 +35,9 @@ export default function Home() {
         </h1>
 
         <p className="mt-1 text-xl leading-8 text-zinc-200">
-          하늘에 떠다니는 <span className="text-[#ffd166]">8,000톤</span>짜리 쓰레기 구름.
+          궤도에 떠다니는 <span className="text-[#ffd166]">8,000톤</span>짜리 쓰레기 구름.
           <br />
-          입 큰 친구가 전부 먹어치우러 갑니다.
+          조그셔틀을 조종해 전부 수거하러 갑니다.
         </p>
 
         <ul className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-lg text-zinc-300">
@@ -64,7 +65,7 @@ export default function Home() {
 
       <footer className="relative z-10 flex items-center justify-between px-5 py-3 text-sm text-zinc-600">
         <span>v0.1.0 · 손으로 그린 우주</span>
-        <span className="hidden sm:inline">쓰다듬으면 따라와요</span>
+        <span className="hidden sm:inline">눌러 끌면 날아가요</span>
       </footer>
     </div>
   );

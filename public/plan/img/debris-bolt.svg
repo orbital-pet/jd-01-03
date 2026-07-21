@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Placeholder medium debris (bolt/nut). Replace freely, keep the filename. -->
+  <g stroke="#8a93ad" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M24 6 L38 14 L38 34 L24 42 L10 34 L10 14 Z" fill="#cfd8e6"/>
+    <circle cx="24" cy="24" r="7" fill="#141838"/>
+  </g>
+</svg>

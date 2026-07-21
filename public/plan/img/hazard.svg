@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Placeholder hazard (spiky shard). Costs fuel on contact. Replace freely, keep the filename. -->
+  <path d="M24 3 L29 15 L42 12 L33 22 L45 28 L31 29 L34 43 L24 33 L14 43 L17 29 L3 28 L15 22 L6 12 L19 15 Z"
+        fill="#ff8080" stroke="#7a2323" stroke-width="2.5" stroke-linejoin="round"/>
+  <g fill="#7a2323" stroke="none">
+    <circle cx="20" cy="24" r="2.2"/>
+    <circle cx="28" cy="24" r="2.2"/>
+  </g>
+</svg>

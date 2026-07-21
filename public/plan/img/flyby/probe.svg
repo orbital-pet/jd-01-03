@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" width="140" height="140">
+  <defs>
+    <radialGradient id="pdish" cx="0.42" cy="0.36" r="0.75">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.7" stop-color="#dfe5ec"/>
+      <stop offset="1" stop-color="#b3bcc8"/>
+    </radialGradient>
+    <linearGradient id="pbus" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d7c079"/>
+      <stop offset="1" stop-color="#8f6417"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(70 66)" stroke="#2b3040" stroke-width="1.5" stroke-linejoin="round">
+    <!-- magnetometer boom -->
+    <line x1="10" y1="0" x2="56" y2="-26" stroke="#6b7280" stroke-width="2"/>
+    <circle cx="56" cy="-26" r="3" fill="#9aa1ad"/>
+    <!-- RTG boom -->
+    <line x1="-10" y1="26" x2="-46" y2="44" stroke="#6b7280" stroke-width="3"/>
+    <g fill="#9aa1ad">
+      <rect x="-62" y="38" width="16" height="11" rx="3"/>
+      <line x1="-58" y1="38" x2="-58" y2="49" stroke="#5c626d" stroke-width="1"/>
+      <line x1="-54" y1="38" x2="-54" y2="49" stroke="#5c626d" stroke-width="1"/>
+      <line x1="-50" y1="38" x2="-50" y2="49" stroke="#5c626d" stroke-width="1"/>
+    </g>
+    <!-- bus -->
+    <rect x="-16" y="12" width="32" height="24" rx="4" fill="url(#pbus)"/>
+    <!-- high-gain dish -->
+    <circle cx="0" cy="-6" r="34" fill="url(#pdish)"/>
+    <circle cx="0" cy="-6" r="22" fill="none" stroke="#c3ccd8" stroke-width="1"/>
+    <circle cx="0" cy="-6" r="11" fill="none" stroke="#c3ccd8" stroke-width="1"/>
+    <!-- feed horn -->
+    <line x1="0" y1="-6" x2="0" y2="-30" stroke="#6b7280" stroke-width="2"/>
+    <circle cx="0" cy="-30" r="3.5" fill="#9aa1ad"/>
+  </g>
+</svg>

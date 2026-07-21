@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" fill="none">
+<g transform="translate(128 130) scale(0.82)">
+<g id="Panel_L" transform="rotate(-84.0 -69.0 16.0)">
+<rect x="-123.0" y="-3.0" width="54.0" height="38.0" rx="17.1" fill="#8FC1EF" stroke="#3E4A63" stroke-width="3.5" /><rect x="-119.0" y="4.2" width="44.0" height="23.6" rx="11.4" fill="#CDE4F9" stroke="none" stroke-width="0" />
+</g><g id="Panel_R" transform="rotate(84.0 69.0 16.0)">
+<rect x="69.0" y="-3.0" width="54.0" height="38.0" rx="17.1" fill="#8FC1EF" stroke="#3E4A63" stroke-width="3.5" /><rect x="75.0" y="4.2" width="44.0" height="23.6" rx="11.4" fill="#CDE4F9" stroke="none" stroke-width="0" />
+</g><ellipse cx="0.0" cy="75.0" rx="22.0" ry="10.0" fill="#97A0B3" stroke="#3E4A63" stroke-width="3.5" id="Thruster"/><g id="Body">
+<rect x="-75.0" y="-49.0" width="150.0" height="122.0" rx="34.0" fill="#FFF7EF" stroke="#3E4A63" stroke-width="3.5" /><rect x="-37.5" y="24.2" width="75.0" height="41.5" rx="20.4" fill="#FFE3C9" stroke="none" stroke-width="0" />
+</g><g id="Antenna" transform="translate(0.0 -45.0) rotate(0.0)">
+<ellipse cx="0.0" cy="0.0" rx="9.0" ry="6.0" fill="#7C87A0" stroke="#3E4A63" stroke-width="3.5" /><g id="Antenna_Tip" transform="rotate(76.0 0 0)">
+<line x1="0.0" y1="0.0" x2="0.0" y2="-42.0" stroke="#3E4A63" stroke-width="5.0" stroke-linecap="round"/><circle cx="0.0" cy="-42.0" r="15.0" fill="#FFCE59" stroke="#3E4A63" stroke-width="3.5" />
+</g>
+</g><g id="Face">
+<g id="StatusLight">
+<path d="M -49.9 -1.8 Q -31.0 16.1 -12.1 -1.8" fill="none" stroke="#3E4A63" stroke-width="5.95" stroke-linecap="round" stroke-linejoin="round" /><path d="M 12.1 -1.8 Q 31.0 16.1 49.9 -1.8" fill="none" stroke="#3E4A63" stroke-width="5.95" stroke-linecap="round" stroke-linejoin="round" />
+</g><ellipse cx="0.0" cy="33.2" rx="4.5" ry="3.2" fill="#46536B" stroke="#3E4A63" stroke-width="2.4499999999999997" /><ellipse cx="-66.0" cy="9.8" rx="10.5" ry="7.6" fill="#FFB1C1" stroke="none" stroke-width="0" /><ellipse cx="66.0" cy="9.8" rx="10.5" ry="7.6" fill="#FFB1C1" stroke="none" stroke-width="0" />
+</g><path d="M 84.0 -62.0 h 14 l -14 14 h 14" fill="none" stroke="#3E4A63" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M 99.0 -73.0 h 10 l -10 10 h 10" fill="none" stroke="#3E4A63" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" /><path d="M 113.5 -84.5 h 7 l -7 7 h 7" fill="none" stroke="#3E4A63" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+</svg>

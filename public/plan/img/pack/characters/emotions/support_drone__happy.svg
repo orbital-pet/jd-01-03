@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" fill="none">
+<g transform="translate(128 130) scale(0.82)">
+<g id="Panel_L" transform="rotate(10.0 -42.0 16.0)">
+<rect x="-76.0" y="3.0" width="34.0" height="26.0" rx="11.7" fill="#8FC1EF" stroke="#3E4A63" stroke-width="3.5" /><rect x="-72.0" y="7.9" width="24.0" height="16.1" rx="7.8" fill="#CDE4F9" stroke="none" stroke-width="0" />
+</g><g id="Panel_R" transform="rotate(-10.0 42.0 16.0)">
+<rect x="42.0" y="3.0" width="34.0" height="26.0" rx="11.7" fill="#8FC1EF" stroke="#3E4A63" stroke-width="3.5" /><rect x="48.0" y="7.9" width="24.0" height="16.1" rx="7.8" fill="#CDE4F9" stroke="none" stroke-width="0" />
+</g><ellipse cx="0.0" cy="55.0" rx="22.0" ry="10.0" fill="#97A0B3" stroke="#3E4A63" stroke-width="3.5" id="Thruster"/><g id="Body">
+<rect x="-48.0" y="-29.0" width="96.0" height="82.0" rx="26.0" fill="#FFF7EF" stroke="#3E4A63" stroke-width="3.5" /><rect x="-24.0" y="20.2" width="48.0" height="27.9" rx="15.6" fill="#FFE3C9" stroke="none" stroke-width="0" />
+</g><g id="RepairArm" transform="translate(0 51)">
+<line x1="0.0" y1="0.0" x2="0.0" y2="16.0" stroke="#3E4A63" stroke-width="4.5" stroke-linecap="round"/><rect x="-9.0" y="14.0" width="8.0" height="12.0" rx="4.0" fill="#7C87A0" stroke="#3E4A63" stroke-width="3.5" transform="rotate(-14 -5 20)"/><rect x="1.0" y="14.0" width="8.0" height="12.0" rx="4.0" fill="#7C87A0" stroke="#3E4A63" stroke-width="3.5" transform="rotate(14 5 20)"/>
+</g><g id="Antenna" transform="translate(0.0 -25.0) rotate(0.0)">
+<ellipse cx="0.0" cy="0.0" rx="9.0" ry="6.0" fill="#7C87A0" stroke="#3E4A63" stroke-width="3.5" /><g id="Antenna_Tip" transform="rotate(-14.0 0 0)">
+<line x1="0.0" y1="0.0" x2="0.0" y2="-27.0" stroke="#3E4A63" stroke-width="5.0" stroke-linecap="round"/><circle cx="0.0" cy="-27.0" r="11.0" fill="#FFCE59" stroke="#3E4A63" stroke-width="3.5" />
+</g>
+</g><g id="Face">
+<g id="StatusLight">
+<path d="M -17.0 8.7 Q 0.0 -13.4 17.0 8.7" fill="none" stroke="#3E4A63" stroke-width="5.95" stroke-linecap="round" stroke-linejoin="round" /><path d="M -17.0 8.7 Q 0.0 -13.4 17.0 8.7" fill="none" stroke="#3E4A63" stroke-width="5.95" stroke-linecap="round" stroke-linejoin="round" />
+</g><path d="M -8 34.4 Q 0 43.4 8 34.4 Z" fill="#46536B" stroke="#3E4A63" stroke-width="2.8000000000000003" stroke-linecap="round" stroke-linejoin="round" /><ellipse cx="-31.0" cy="13.8" rx="8.5" ry="6.1" fill="#FFB1C1" stroke="none" stroke-width="0" /><ellipse cx="31.0" cy="13.8" rx="8.5" ry="6.1" fill="#FFB1C1" stroke="none" stroke-width="0" />
+</g><path d="M -70.0 -48.0 L -67.0 -41.0 L -60.0 -39.0 L -67.0 -37.0 L -70.0 -30.0 L -73.0 -37.0 L -80.0 -39.0 L -73.0 -41.0 Z" fill="#FFCE59" stroke="#3E4A63" stroke-width="2.4499999999999997" stroke-linecap="round" stroke-linejoin="round" /><path d="M 70.0 -48.0 L 73.0 -41.0 L 80.0 -39.0 L 73.0 -37.0 L 70.0 -30.0 L 67.0 -37.0 L 60.0 -39.0 L 67.0 -41.0 Z" fill="#FFCE59" stroke="#3E4A63" stroke-width="2.4499999999999997" stroke-linecap="round" stroke-linejoin="round" />
+</g>
+</svg>

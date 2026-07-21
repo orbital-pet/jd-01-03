@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" fill="none">
+<g transform="translate(128 130) scale(0.82)">
+<g id="Panel_L" transform="rotate(-52.0 -73.0 16.0)">
+<rect x="-129.0" y="-4.0" width="56.0" height="40.0" rx="18.0" fill="#8FC1EF" stroke="#3E4A63" stroke-width="3.5" /><rect x="-125.0" y="3.6" width="46.0" height="24.8" rx="12.0" fill="#CDE4F9" stroke="none" stroke-width="0" /><g id="Panel_L_Outer" transform="rotate(-70.0 -132.0 16.0)">
+<rect x="-178.0" y="-0.8" width="46.0" height="33.6" rx="15.2" fill="#8FC1EF" stroke="#3E4A63" stroke-width="3.5" /><rect x="-175.0" y="5.6" width="38.0" height="20.8" rx="10.4" fill="#CDE4F9" stroke="none" stroke-width="0" />
+</g>
+</g><g id="Panel_R" transform="rotate(52.0 73.0 16.0)">
+<rect x="73.0" y="-4.0" width="56.0" height="40.0" rx="18.0" fill="#8FC1EF" stroke="#3E4A63" stroke-width="3.5" /><rect x="79.0" y="3.6" width="46.0" height="24.8" rx="12.0" fill="#CDE4F9" stroke="none" stroke-width="0" /><g id="Panel_R_Outer" transform="rotate(70.0 132.0 16.0)">
+<rect x="132.0" y="-0.8" width="46.0" height="33.6" rx="15.2" fill="#8FC1EF" stroke="#3E4A63" stroke-width="3.5" /><rect x="137.0" y="5.6" width="38.0" height="20.8" rx="10.4" fill="#CDE4F9" stroke="none" stroke-width="0" />
+</g>
+</g><ellipse cx="0.0" cy="82.0" rx="22.0" ry="10.0" fill="#97A0B3" stroke="#3E4A63" stroke-width="3.5" id="Thruster"/><g id="Body">
+<rect x="-79.0" y="-56.0" width="158.0" height="136.0" rx="36.0" fill="#FFF7EF" stroke="#3E4A63" stroke-width="3.5" /><rect x="-39.5" y="25.6" width="79.0" height="46.2" rx="21.6" fill="#FFE3C9" stroke="none" stroke-width="0" />
+</g><g id="Arm" transform="translate(71 28) rotate(8)">
+<circle cx="0.0" cy="0.0" r="13.0" fill="#C7CEDB" stroke="#3E4A63" stroke-width="3.5" /><rect x="8.0" y="-8.0" width="34.0" height="16.0" rx="8.0" fill="#C7CEDB" stroke="#3E4A63" stroke-width="3.5" /><circle cx="44.0" cy="0.0" r="10.0" fill="#C7CEDB" stroke="#3E4A63" stroke-width="3.5" /><g id="Arm_Claw_A" transform="rotate(-14 50 -10)">
+<rect x="50.0" y="-16.0" width="22.0" height="12.0" rx="6.0" fill="#7C87A0" stroke="#3E4A63" stroke-width="3.5" />
+</g><g id="Arm_Claw_B" transform="rotate(14 50 10)">
+<rect x="50.0" y="4.0" width="22.0" height="12.0" rx="6.0" fill="#7C87A0" stroke="#3E4A63" stroke-width="3.5" />
+</g>
+</g><g id="Antenna" transform="translate(0.0 -52.0) rotate(0.0)">
+<ellipse cx="0.0" cy="0.0" rx="9.0" ry="6.0" fill="#7C87A0" stroke="#3E4A63" stroke-width="3.5" /><g id="Antenna_Tip" transform="rotate(58.0 0 0)">
+<line x1="0.0" y1="0.0" x2="0.0" y2="-50.0" stroke="#3E4A63" stroke-width="5.0" stroke-linecap="round"/><circle cx="0.0" cy="-50.0" r="16.0" fill="#FFCE59" stroke="#3E4A63" stroke-width="3.5" />
+</g>
+</g><g id="Face">
+<g id="StatusLight">
+<ellipse cx="-33.0" cy="-0.9" rx="20.2" ry="22.0" fill="#FF8A3D" stroke="#3E4A63" stroke-width="3.5" /><ellipse cx="-39.6" cy="-7.5" rx="7.5" ry="6.6" fill="#FFFFFF" stroke="none" stroke-width="0" /><ellipse cx="-25.1" cy="5.3" rx="3.3" ry="2.9" fill="#FFFFFF" stroke="none" stroke-width="0" /><path d="M -56.1 -25.1 h 46.2 v 30.0 a 23.1 8.8 0 0 1 -46.2 0 Z" fill="#FFF7EF"/><path d="M -53.9 4.7 Q -33.0 10.2 -12.1 4.7" fill="none" stroke="#3E4A63" stroke-width="3.15" stroke-linecap="round" stroke-linejoin="round" /><ellipse cx="33.0" cy="-0.9" rx="20.2" ry="22.0" fill="#FF8A3D" stroke="#3E4A63" stroke-width="3.5" /><ellipse cx="26.4" cy="-7.5" rx="7.5" ry="6.6" fill="#FFFFFF" stroke="none" stroke-width="0" /><ellipse cx="40.9" cy="5.3" rx="3.3" ry="2.9" fill="#FFFFFF" stroke="none" stroke-width="0" /><path d="M 9.9 -25.1 h 46.2 v 30.0 a 23.1 8.8 0 0 1 -46.2 0 Z" fill="#FFF7EF"/><path d="M 12.1 4.7 Q 33.0 10.2 53.9 4.7" fill="none" stroke="#3E4A63" stroke-width="3.15" stroke-linecap="round" stroke-linejoin="round" />
+</g><ellipse cx="0.0" cy="35.1" rx="4.5" ry="3.2" fill="#46536B" stroke="#3E4A63" stroke-width="2.4499999999999997" /><ellipse cx="-69.0" cy="11.2" rx="11.0" ry="7.9" fill="#FFB1C1" stroke="none" stroke-width="0" /><ellipse cx="69.0" cy="11.2" rx="11.0" ry="7.9" fill="#FFB1C1" stroke="none" stroke-width="0" />
+</g>
+</g>
+</svg>

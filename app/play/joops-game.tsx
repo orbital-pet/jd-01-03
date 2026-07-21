@@ -8,8 +8,9 @@
 // 위에서 잔해를 주워 kg을 모으고, 붉은 위험물은 피하고, 연료가 바닥나기 전에
 // 연료 셀로 수명을 늘린다. 연료 0 → 표류 유예 동안 셀을 먹으면 재점화.
 //
-// 조작/물리는 형제 레포 jd-03의 SortieGame에서 이식했고, 배경·폰트·화면 구성은
-// jd-01의 두들 정체성을 그대로 유지한다. 엔티티는 public/plan/img 의 SVG로 그린다.
+// 아트는 satellite_pet_svg_pack(public/plan/img/pack). kg가 쌓이면 펫이 3단계까지
+// 진화하고, 상태(저연료·피격·표류·획득)에 따라 표정이 바뀐다. 보조 드론이 따라오고,
+// 획득·피격·자기장·진화 이펙트가 붙는다. 벽에 다가가면 카메라가 살짝 그쪽으로 밀린다.
 //
 // 원칙(jd-01/jd-03 공통):
 // - 초당 60번 바뀌는 상태는 전부 useEffect 클로저 지역 변수. React는 모른다.
@@ -20,7 +21,21 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BEST_KEY, DOODLE_FONT, SPACE_BG, fitCanvas } from "../lib/doodle-art";
-import { type PilotKind, drawSprite, loadSprites } from "../lib/pilot-sprites";
+import {
+  BG,
+  DEBRIS_SPRITES,
+  type Emotion,
+  FUEL_SRC,
+  FX,
+  type Stage,
+  UI,
+  debrisSrc,
+  drawImg,
+  droneSrc,
+  img,
+  petSrc,
+  preload,
+} from "../lib/pilot-sprites";
 import {
   closeAudio,
   ensureAudio,
@@ -45,47 +60,43 @@ const DIFF = {
   driftGrace: 4, // 연료 0 이후 표류 유예(초)
 };
 
-/** 손맛 튜닝 — 전체화면(CSS px) 기준으로 jd-03 값을 키웠다 */
+/** 손맛 튜닝 — 전체화면(CSS px) 기준 */
 const TUNE = {
   joyMax: 78,
   joyDead: 8,
   levelAt: [26, 52], // 분사 단계 경계(px)
   thrustAccel: [520, 1150, 2000], // 단계별 가속(px/s²)
   friction: 1.15, // 우주 관성 감쇠
-  minSpeed: 55, // 한 번 움직이면 유지되는 최소 표류 속도
+  minSpeed: 55, // 최소 표류 속도
   bounce: 0.72, // 벽 반동
   eatBonus: 10, // 획득 판정 여유(px)
   hitShrink: 0.72, // 피격 판정은 반지름을 이만큼 줄여서
   eatAnim: 0.16, // "꿀꺽" 연출 시간
-  magnetRange: 62, // petR에 더해지는 자석 범위(px)
   magnetPull: 240, // 자석 끌어당김 속도(px/s)
   invincible: 1.3, // 피격 후 무적(초)
-  blinkHz: 8,
   shakeTime: 0.32,
   shakeAmp: 7,
   grace: 2, // 시작 직후 위험물 미출현(초)
   maxDt: 0.05,
-  shipPx: 62, // 우주선 그림 한 변(px)
-  petR: 26, // 우주선 충돌 반지름
+  camLead: 0.06, // 카메라가 펫을 따라 밀리는 정도
+  camMax: 16, // 카메라 최대 이동(px)
 };
 
 const THRUST_COLORS = ["#8ecbff", "#ffd166", "#ff8080"];
 
-/** 잔해 종류별 스펙 (drawPx=그림 크기, r=충돌 반지름) */
-const KIND_STAT: Record<
-  PilotKind,
-  { drawPx: number; r: number; kg: [number, number]; speed: [number, number] }
-> = {
-  ship: { drawPx: TUNE.shipPx, r: TUNE.petR, kg: [0, 0], speed: [0, 0] },
-  chip: { drawPx: 26, r: 12, kg: [2, 4], speed: [60, 105] },
-  bolt: { drawPx: 34, r: 16, kg: [5, 9], speed: [55, 90] },
-  tank: { drawPx: 52, r: 24, kg: [15, 25], speed: [40, 62] },
-  hazard: { drawPx: 40, r: 18, kg: [0, 0], speed: [85, 150] },
-  fuel: { drawPx: 36, r: 16, kg: [0, 0], speed: [55, 80] },
+type Tier = "small" | "medium" | "large";
+type Kind = "chip" | "bolt" | "tank" | "hazard" | "fuel";
+
+/** 종류별 스펙 (r=충돌 반지름, kg, 낙하 속도) */
+const KIND_STAT: Record<Kind, { drawPx: number; r: number; kg: [number, number]; speed: [number, number]; tier?: Tier }> = {
+  chip: { drawPx: 30, r: 12, kg: [2, 4], speed: [60, 105], tier: "small" },
+  bolt: { drawPx: 40, r: 16, kg: [5, 9], speed: [55, 90], tier: "medium" },
+  tank: { drawPx: 58, r: 24, kg: [15, 25], speed: [40, 62], tier: "large" },
+  hazard: { drawPx: 42, r: 18, kg: [0, 0], speed: [85, 150] },
+  fuel: { drawPx: 40, r: 16, kg: [0, 0], speed: [55, 80] },
 };
 
-/** 등장 가중치 (상대비) — 위험물은 grace 이후에만 */
-const KIND_WEIGHT: { kind: PilotKind; w: number }[] = [
+const KIND_WEIGHT: { kind: Kind; w: number }[] = [
   { kind: "chip", w: 46 },
   { kind: "bolt", w: 26 },
   { kind: "hazard", w: 18 },
@@ -93,7 +104,7 @@ const KIND_WEIGHT: { kind: PilotKind; w: number }[] = [
   { kind: "fuel", w: 13 },
 ];
 
-function pickKind(allowHazard: boolean): PilotKind {
+function pickKind(allowHazard: boolean): Kind {
   const table = KIND_WEIGHT.filter((k) => allowHazard || k.kind !== "hazard");
   const total = table.reduce((a, k) => a + k.w, 0);
   let r = Math.random() * total;
@@ -104,8 +115,11 @@ function pickKind(allowHazard: boolean): PilotKind {
   return "chip";
 }
 
+const pick = <T,>(arr: T[]): T => arr[(Math.random() * arr.length) | 0];
+
 type Junk = {
-  kind: PilotKind;
+  kind: Kind;
+  spr: string;
   x: number;
   y: number;
   vx: number;
@@ -118,8 +132,7 @@ type Junk = {
   eatT: number; // -1 = 떠다니는 중, 0..eatAnim = 빨려드는 중
 };
 
-/** 네 가장자리 중 하나에서 화면 안쪽(±0.7rad)을 향해 진입 */
-function makeJunk(kind: PilotKind, w: number, h: number): Junk {
+function makeJunk(kind: Kind, w: number, h: number): Junk {
   const stat = KIND_STAT[kind];
   const speed = stat.speed[0] + Math.random() * (stat.speed[1] - stat.speed[0]);
   const edge = Math.floor(Math.random() * 4);
@@ -144,8 +157,11 @@ function makeJunk(kind: PilotKind, w: number, h: number): Junk {
     base = 0;
   }
   const ang = base + (Math.random() * 2 - 1) * 0.7;
+  const spr =
+    kind === "fuel" ? FUEL_SRC : kind === "hazard" ? FX.alert : debrisSrc(pick(DEBRIS_SPRITES[stat.tier!]));
   return {
     kind,
+    spr,
     x,
     y,
     vx: Math.cos(ang) * speed,
@@ -160,7 +176,13 @@ function makeJunk(kind: PilotKind, w: number, h: number): Junk {
 }
 
 type Popup = { text: string; x: number; y: number; age: number; color: string };
+type Fx = { src: string; x: number; y: number; age: number; life: number; px: number; grow: number; rise: number; spin: number };
 const EAT_WORDS = ["냠!", "꿀꺽!", "좋아!", "수거!"];
+
+/** kg → 진화 단계 */
+const stageForKg = (kg: number): Stage => (kg >= 150 ? 3 : kg >= 60 ? 2 : 1);
+const STAGE_R: Record<Stage, number> = { 1: 26, 2: 30, 3: 34 };
+const STAGE_PX: Record<Stage, number> = { 1: 68, 2: 80, 3: 92 };
 
 export default function JoopsGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -171,6 +193,7 @@ export default function JoopsGame() {
     eaten: 0,
     hits: 0,
     sec: 0,
+    stage: 1 as Stage,
   });
 
   useEffect(() => {
@@ -178,13 +201,6 @@ export default function JoopsGame() {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const bank = loadSprites();
-    // 배경은 팩의 세로 우주 이미지를 cover로 채운다 (엔티티 스프라이트와 톤을 맞추려고)
-    const bg = typeof window !== "undefined" ? new Image() : null;
-    if (bg) {
-      bg.decoding = "async";
-      bg.src = "/plan/img/bg.svg";
-    }
 
     let w = 0;
     let h = 0;
@@ -193,6 +209,27 @@ export default function JoopsGame() {
     let t = 0;
 
     let phase: Phase = "title";
+
+    // 자주 쓰는 자산 예열 (늦게 온 그림도 RAF 재그리기에서 자연히 나타난다)
+    preload([
+      BG,
+      petSrc(1, "normal"),
+      petSrc(1, "happy"),
+      FUEL_SRC,
+      FX.alert,
+      FX.ring,
+      FX.sparkle,
+      FX.heart,
+      FX.magnet,
+      FX.zzz,
+      UI.battery,
+      UI.coin,
+      UI.evo,
+      ...DEBRIS_SPRITES.small.map(debrisSrc),
+      ...DEBRIS_SPRITES.medium.map(debrisSrc),
+      ...DEBRIS_SPRITES.large.map(debrisSrc),
+    ]);
+    const bg = img(BG);
 
     // ---- 시뮬레이션 상태 (전부 클로저 지역 변수) ----
     const pet = { x: 0, y: 0 };
@@ -204,6 +241,7 @@ export default function JoopsGame() {
     let spawnTimer = 0.3;
     let invincible = 0;
     let shake = 0;
+    let ateFlash = 0; // 방금 먹었을 때 표정용 타이머
     let kgCollected = 0;
     let eaten = 0;
     let hits = 0;
@@ -212,8 +250,16 @@ export default function JoopsGame() {
     let thrustLevel = 0;
     let thrusting = false;
     let thrustAng = 0;
+    let stage: Stage = 1;
+    let petR = STAGE_R[1];
+    let shipPx = STAGE_PX[1];
+    let magnetRange = 62;
+    let camX = 0;
+    let camY = 0;
+    const drone = { x: 0, y: 0 };
     const junks: Junk[] = [];
     const popups: Popup[] = [];
+    const fxs: Fx[] = [];
 
     try {
       best = Number(localStorage.getItem(BEST_KEY)) || 0;
@@ -228,12 +274,24 @@ export default function JoopsGame() {
     const keys = new Set<string>();
 
     const pushUi = () =>
-      setUi({ phase, kg: Math.round(kgCollected), best, eaten, hits, sec: Math.round(elapsed) });
+      setUi({ phase, kg: Math.round(kgCollected), best, eaten, hits, sec: Math.round(elapsed), stage });
+
+    const applyStage = (s: Stage) => {
+      stage = s;
+      petR = STAGE_R[s];
+      shipPx = STAGE_PX[s];
+      magnetRange = 62 + (s - 1) * 22; // 진화할수록 자석이 넓어진다
+    };
+
+    const spawnFx = (src: string, x: number, y: number, px: number, o: Partial<Fx> = {}) =>
+      fxs.push({ src, x, y, age: 0, life: o.life ?? 0.5, px, grow: o.grow ?? 1.4, rise: o.rise ?? 0, spin: o.spin ?? 0 });
 
     const start = () => {
       phase = "playing";
       pet.x = w / 2;
       pet.y = h * 0.6;
+      drone.x = pet.x - 40;
+      drone.y = pet.y + 30;
       vx = 0;
       vy = 0;
       fuel = DIFF.startFuel;
@@ -242,11 +300,16 @@ export default function JoopsGame() {
       spawnTimer = 0.3;
       invincible = 0;
       shake = 0;
+      ateFlash = 0;
       kgCollected = 0;
       eaten = 0;
       hits = 0;
+      camX = 0;
+      camY = 0;
+      applyStage(1);
       junks.length = 0;
       popups.length = 0;
+      fxs.length = 0;
       playStart();
       pushUi();
     };
@@ -273,14 +336,36 @@ export default function JoopsGame() {
       j.eatT = 0;
       kgCollected += j.kg;
       eaten += 1;
+      ateFlash = 0.25;
       popup(
-        Math.random() < 0.5 ? `+${Math.round(j.kg)}kg` : EAT_WORDS[(Math.random() * EAT_WORDS.length) | 0],
+        Math.random() < 0.5 ? `+${Math.round(j.kg)}kg` : pick(EAT_WORDS),
         j.x,
         j.y - 10,
         "#7ee8b2",
       );
+      spawnFx(FX.ring, pet.x, pet.y + petR * 0.3, petR * 1.4, { life: 0.42, grow: 2.0 });
+      spawnFx(FX.sparkle, j.x, j.y, 26, { life: 0.4, grow: 1.2, spin: 6 });
       playEat();
+      // 진화 체크
+      const ns = stageForKg(kgCollected);
+      if (ns !== stage) evolve(ns);
       pushUi();
+    };
+
+    const evolve = (ns: Stage) => {
+      applyStage(ns);
+      popup("진화!", pet.x, pet.y - petR - 16, "#ffd166");
+      spawnFx(UI.evo, pet.x, pet.y - petR - 8, 34, { life: 0.9, grow: 0.6, rise: 40 });
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        spawnFx(FX.sparkle, pet.x + Math.cos(a) * petR, pet.y + Math.sin(a) * petR, 24, {
+          life: 0.6,
+          grow: 1.6,
+          spin: 5,
+        });
+      }
+      shake = Math.max(shake, 0.2);
+      playFuelUp();
     };
 
     const pickupFuel = (j: Junk) => {
@@ -289,6 +374,7 @@ export default function JoopsGame() {
       fuel = Math.min(DIFF.startFuel, fuel + DIFF.fuelRefill);
       emptyAt = null;
       popup(revived ? "재점화!" : `연료 +${DIFF.fuelRefill}`, j.x, j.y - 10, "#66fcf1");
+      spawnFx(FX.heart, pet.x, pet.y - petR * 0.3, 30, { life: 0.6, grow: 1.2, rise: 26 });
       playFuelUp();
     };
 
@@ -297,7 +383,8 @@ export default function JoopsGame() {
       invincible = TUNE.invincible;
       shake = TUNE.shakeTime;
       fuel = Math.max(0, fuel - DIFF.hazardDamage);
-      popup(`아야! 연료 -${DIFF.hazardDamage}`, pet.x, pet.y - TUNE.petR - 10, "#ff8080");
+      popup(`아야! 연료 -${DIFF.hazardDamage}`, pet.x, pet.y - petR - 10, "#ff8080");
+      spawnFx(FX.alert, j.x, j.y, 40, { life: 0.45, grow: 0.8 });
       const idx = junks.indexOf(j);
       if (idx >= 0) junks.splice(idx, 1);
       playHit();
@@ -306,20 +393,32 @@ export default function JoopsGame() {
 
     // ---- update: 상태만 바꾼다 ----
     const update = (dt: number) => {
+      // 이펙트 수명
+      for (let i = fxs.length - 1; i >= 0; i--) {
+        fxs[i].age += dt;
+        if (fxs[i].age >= fxs[i].life) fxs.splice(i, 1);
+      }
+      // 보조 드론: 펫 뒤쪽에서 랙 있게 따라온다
+      const droneTX = pet.x - 38 - Math.sin(t * 0.8) * 6;
+      const droneTY = pet.y + 26 + Math.sin(t * 1.3) * 5;
+      drone.x += (droneTX - drone.x) * Math.min(1, dt * 4);
+      drone.y += (droneTY - drone.y) * Math.min(1, dt * 4);
+
       if (phase !== "playing") {
-        // 타이틀/오버: 우주선은 화면 중앙에서 살짝 표류
         vx -= vx * 1.5 * dt;
         vy -= vy * 1.5 * dt;
         pet.x += (w / 2 - pet.x) * Math.min(1, dt * 1.5);
         pet.y += (h * 0.6 + Math.sin(t * 1.6) * 8 - pet.y) * Math.min(1, dt * 1.5);
+        camX += (0 - camX) * Math.min(1, dt * 3);
+        camY += (0 - camY) * Math.min(1, dt * 3);
         return;
       }
 
       elapsed += dt;
       if (invincible > 0) invincible -= dt;
       if (shake > 0) shake -= dt;
+      if (ateFlash > 0) ateFlash -= dt;
 
-      // 연료 소진 → 표류 유예 → 종료 (유예 중 셀을 먹으면 부활)
       if (fuel <= 0 && emptyAt === null) {
         emptyAt = elapsed;
         playFuelEmpty();
@@ -329,14 +428,13 @@ export default function JoopsGame() {
         return;
       }
 
-      // 스폰
       spawnTimer -= dt;
       if (spawnTimer <= 0) {
         junks.push(makeJunk(pickKind(elapsed > TUNE.grace), w, h));
         spawnTimer = DIFF.spawnBase * (0.7 + Math.random() * 0.6);
       }
 
-      // --- 추진 입력 정리: 조이스틱 우선, 없으면 키보드 ---
+      // --- 추진 입력: 조이스틱 우선, 없으면 키보드 ---
       let tdx = 0;
       let tdy = 0;
       let level = 0;
@@ -384,7 +482,7 @@ export default function JoopsGame() {
       }
       updateThrustSound(thrusting ? thrustLevel + 1 : 0);
 
-      // --- 우주 관성: 마찰 감쇠 + 최소 표류 유지 ---
+      // --- 우주 관성 ---
       vx -= vx * TUNE.friction * dt;
       vy -= vy * TUNE.friction * dt;
       const sp = Math.hypot(vx, vy);
@@ -396,26 +494,30 @@ export default function JoopsGame() {
       pet.y += vy * dt;
 
       // --- 벽 반동 ---
-      const R = TUNE.petR;
-      if (pet.x < R) {
-        pet.x = R;
+      if (pet.x < petR) {
+        pet.x = petR;
         vx *= -TUNE.bounce;
-      } else if (pet.x > w - R) {
-        pet.x = w - R;
+      } else if (pet.x > w - petR) {
+        pet.x = w - petR;
         vx *= -TUNE.bounce;
       }
-      if (pet.y < R) {
-        pet.y = R;
+      if (pet.y < petR) {
+        pet.y = petR;
         vy *= -TUNE.bounce;
-      } else if (pet.y > h - R) {
-        pet.y = h - R;
+      } else if (pet.y > h - petR) {
+        pet.y = h - petR;
         vy *= -TUNE.bounce;
       }
 
-      // --- 잔해: 역순 순회 + splice ---
+      // --- 카메라 넛지: 펫이 벽에 다가갈수록 화면이 그쪽으로 살짝 밀린다 ---
+      const camTX = Math.max(-TUNE.camMax, Math.min(TUNE.camMax, (pet.x - w / 2) * TUNE.camLead));
+      const camTY = Math.max(-TUNE.camMax, Math.min(TUNE.camMax, (pet.y - h / 2) * TUNE.camLead));
+      camX += (camTX - camX) * Math.min(1, dt * 4);
+      camY += (camTY - camY) * Math.min(1, dt * 4);
+
+      // --- 잔해 ---
       for (let i = junks.length - 1; i >= 0; i--) {
         const j = junks[i];
-
         if (j.eatT >= 0) {
           j.eatT += dt;
           const suck = Math.min(1, dt * 18);
@@ -425,17 +527,15 @@ export default function JoopsGame() {
           if (j.eatT >= TUNE.eatAnim) junks.splice(i, 1);
           continue;
         }
-
         j.x += j.vx * dt;
         j.y += j.vy * dt;
         j.rot += j.vrot * dt;
 
-        // 자석: 위험물 빼고 슬쩍 끌려온다
         if (j.kind !== "hazard") {
           const dx = pet.x - j.x;
           const dy = pet.y - j.y;
           const dist = Math.hypot(dx, dy);
-          if (dist > 1 && dist < R + TUNE.magnetRange) {
+          if (dist > 1 && dist < petR + magnetRange) {
             const pull = (TUNE.magnetPull * dt) / dist;
             j.x += dx * pull;
             j.y += dy * pull;
@@ -444,16 +544,15 @@ export default function JoopsGame() {
 
         const dist = Math.hypot(pet.x - j.x, pet.y - j.y);
         if (j.kind === "hazard") {
-          if (invincible <= 0 && dist < R * TUNE.hitShrink + j.r) {
+          if (invincible <= 0 && dist < petR * TUNE.hitShrink + j.r) {
             hit(j);
             continue;
           }
-        } else if (dist < R + j.r + TUNE.eatBonus) {
+        } else if (dist < petR + j.r + TUNE.eatBonus) {
           if (j.kind === "fuel") pickupFuel(j);
           else eat(j);
         }
 
-        // 화면 밖으로 충분히 나가면 제거
         if (j.x < -60 || j.x > w + 60 || j.y < -60 || j.y > h + 60) junks.splice(i, 1);
       }
 
@@ -465,12 +564,24 @@ export default function JoopsGame() {
       }
     };
 
-    // 배경 이미지를 화면에 cover로 그린다. 로드 전이면 단색으로 채운다.
+    // 현재 상태에 맞는 펫 표정
+    const currentEmotion = (): Emotion => {
+      if (phase === "over") return "hibernate";
+      if (phase !== "playing") return "happy";
+      if (emptyAt !== null) return "hibernate";
+      if (invincible > 0) return "sulky";
+      if (fuel < DIFF.startFuel * 0.25) return "low_battery";
+      if (ateFlash > 0) return "data_full";
+      if (thrusting) return "happy";
+      return "normal";
+    };
+
+    // 배경을 cover로 (카메라·흔들림 여유 포함)
     const drawSpaceBg = () => {
       ctx.fillStyle = SPACE_BG;
-      ctx.fillRect(-16, -16, w + 32, h + 32); // 화면 흔들림 대비 여유 있게
+      ctx.fillRect(-40, -40, w + 80, h + 80);
       if (bg && bg.complete && bg.naturalWidth > 0) {
-        const s = Math.max(w / bg.naturalWidth, h / bg.naturalHeight);
+        const s = Math.max(w / bg.naturalWidth, h / bg.naturalHeight) * 1.06;
         const dw = bg.naturalWidth * s;
         const dh = bg.naturalHeight * s;
         ctx.drawImage(bg, (w - dw) / 2, (h - dh) / 2, dw, dh);
@@ -480,25 +591,40 @@ export default function JoopsGame() {
     // ---- draw: 읽기만 한다 ----
     const draw = () => {
       ctx.save();
+      // 카메라 넛지 + 화면 흔들림 (둘 다 월드에만 적용, HUD/조이스틱은 밖에서)
+      let ox = -camX;
+      let oy = -camY;
       if (shake > 0) {
         const a = (shake / TUNE.shakeTime) * TUNE.shakeAmp;
-        ctx.translate((Math.random() - 0.5) * a, (Math.random() - 0.5) * a);
+        ox += (Math.random() - 0.5) * a;
+        oy += (Math.random() - 0.5) * a;
       }
+      ctx.translate(ox, oy);
       drawSpaceBg();
 
-      // 잔해
       for (const j of junks) {
         const sc = j.eatT >= 0 ? Math.max(0.05, 1 - j.eatT / TUNE.eatAnim) : 1;
-        drawSprite(ctx, bank, j.kind, j.x, j.y, j.drawPx * sc, j.rot);
+        if (!drawImg(ctx, j.spr, j.x, j.y, j.drawPx * sc, j.rot)) {
+          ctx.fillStyle = j.kind === "hazard" ? "#ffce59" : "#8ecbff";
+          ctx.beginPath();
+          ctx.arc(j.x, j.y, (j.drawPx * sc) / 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
 
-      // 추진 화염 (우주선 뒤쪽)
+      // 자기장 오라 (자석 메커닉 연출, 진화할수록 강하게)
+      if (phase === "playing") {
+        const pulse = 1 + Math.sin(t * 3) * 0.06;
+        drawImg(ctx, FX.magnet, pet.x, pet.y, (petR + magnetRange) * 1.4 * pulse, t * 0.4, 0.12 + stage * 0.04);
+      }
+
+      // 추진 화염
       if (thrusting && phase === "playing") {
         ctx.fillStyle = THRUST_COLORS[thrustLevel];
         for (let i = 1; i <= thrustLevel + 2; i++) {
           const flick = Math.random() > 0.4 ? 0 : 3;
-          const fx = pet.x - Math.cos(thrustAng) * (TUNE.petR + flick + i * 6);
-          const fy = pet.y - Math.sin(thrustAng) * (TUNE.petR + flick + i * 6);
+          const fx = pet.x - Math.cos(thrustAng) * (petR + flick + i * 6);
+          const fy = pet.y - Math.sin(thrustAng) * (petR + flick + i * 6);
           const fs = Math.max(2, 8 - i * 1.6);
           ctx.beginPath();
           ctx.arc(fx, fy, fs, 0, Math.PI * 2);
@@ -506,12 +632,30 @@ export default function JoopsGame() {
         }
       }
 
-      // 우주선 (무적 중 깜빡)
-      const blink =
-        invincible > 0 && Math.floor(t * TUNE.blinkHz * 2) % 2 === 1 && phase === "playing";
+      // 보조 드론 (펫보다 뒤에 작게)
+      drawImg(ctx, droneSrc(emptyAt !== null ? "hibernate" : "happy"), drone.x, drone.y, 30, Math.sin(t * 2) * 0.15);
+
+      // 표류 중 Zzz
+      if (emptyAt !== null && phase === "playing") {
+        drawImg(ctx, FX.zzz, pet.x + petR * 0.7, pet.y - petR - 6 - Math.sin(t * 2) * 3, 26, 0, 0.9);
+      }
+
+      // 펫 (무적 중 깜빡)
+      const blink = invincible > 0 && Math.floor(t * 16) % 2 === 1 && phase === "playing";
       if (!blink) {
         const bob = Math.sin(t * 3) * 2;
-        drawSprite(ctx, bank, "ship", pet.x, pet.y + bob, TUNE.shipPx);
+        if (!drawImg(ctx, petSrc(stage, currentEmotion()), pet.x, pet.y + bob, shipPx)) {
+          ctx.fillStyle = "#7ee8b2";
+          ctx.beginPath();
+          ctx.arc(pet.x, pet.y, petR, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // 이펙트 (펫 위)
+      for (const f of fxs) {
+        const k = f.age / f.life;
+        drawImg(ctx, f.src, f.x, f.y - f.rise * k, f.px * (1 + f.grow * k), f.spin * f.age, Math.max(0, 1 - k));
       }
 
       // 팝업
@@ -529,7 +673,7 @@ export default function JoopsGame() {
       ctx.globalAlpha = 1;
       ctx.restore();
 
-      // 조이스틱 (흔들림 밖)
+      // 조이스틱 (화면 고정)
       if (joyActive && phase === "playing") {
         ctx.globalAlpha = 0.16;
         ctx.fillStyle = "#ffffff";
@@ -550,42 +694,38 @@ export default function JoopsGame() {
     const drawHud = () => {
       const pad = 16;
       const top = 14;
-      // 연료 게이지
-      const barW = Math.min(200, w * 0.42);
+      // 연료 게이지 + 배터리 아이콘
+      drawImg(ctx, UI.battery, pad + 9, top + 6, 24);
+      const barX = pad + 24;
+      const barW = Math.min(180, w * 0.4);
       const barH = 12;
-      ctx.fillStyle = "rgba(5,6,15,0.45)";
-      ctx.fillRect(pad - 4, top - 4, barW + 8, barH + 8);
       ctx.fillStyle = "#2a3358";
-      ctx.fillRect(pad, top, barW, barH);
+      ctx.fillRect(barX, top, barW, barH);
       const frac = Math.max(0, fuel / DIFF.startFuel);
       ctx.fillStyle = frac > 0.25 ? "#66fcf1" : "#ff8080";
-      ctx.fillRect(pad, top, barW * frac, barH);
-      ctx.font = `700 15px ${DOODLE_FONT}`;
-      ctx.textAlign = "left";
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = "#e8ecf7";
-      ctx.fillText("연료", pad, top + barH + 14);
+      ctx.fillRect(barX, top, barW * frac, barH);
 
-      // kg · 시간 (우측)
+      // kg + 스크랩 아이콘 + 시간 (우측)
+      drawImg(ctx, UI.coin, w - pad - 8, top + 4, 22);
       ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
       ctx.font = `700 22px ${DOODLE_FONT}`;
       ctx.fillStyle = "#7ee8b2";
-      ctx.fillText(`${Math.round(kgCollected)}kg`, w - pad, top + 6);
+      ctx.fillText(`${Math.round(kgCollected)}kg`, w - pad - 24, top + 6);
       ctx.font = `700 14px ${DOODLE_FONT}`;
       ctx.fillStyle = "#8ecbff";
-      ctx.fillText(`T+${String(Math.floor(elapsed)).padStart(2, "0")}s`, w - pad, top + 26);
+      ctx.fillText(`T+${String(Math.floor(elapsed)).padStart(2, "0")}s · ${stage}단계`, w - pad, top + 28);
       if (hits > 0) {
         ctx.fillStyle = "#ff8080";
-        ctx.fillText(`피격 ×${hits}`, w - pad, top + 44);
+        ctx.fillText(`피격 ×${hits}`, w - pad, top + 46);
       }
 
-      // 표류 경고 (깜빡)
       if (emptyAt !== null && Math.floor(t * 4) % 2 === 0) {
         const remain = Math.max(0, Math.ceil(DIFF.driftGrace - (elapsed - emptyAt)));
         ctx.textAlign = "center";
         ctx.font = `700 22px ${DOODLE_FONT}`;
         ctx.fillStyle = "#ff8080";
-        ctx.fillText(`⚠ 연료 소진 — 표류 ${remain}s`, w / 2, top + 30);
+        ctx.fillText(`⚠ 연료 소진 — 표류 ${remain}s`, w / 2, top + 34);
       }
     };
 
@@ -611,7 +751,7 @@ export default function JoopsGame() {
         return;
       }
       if (phase === "over") {
-        if (t - overAt < 0.6) return; // 죽은 순간의 손가락 무시
+        if (t - overAt < 0.6) return;
         start();
         return;
       }
@@ -664,6 +804,8 @@ export default function JoopsGame() {
       if (!pet.x) {
         pet.x = w / 2;
         pet.y = h * 0.6;
+        drone.x = pet.x - 40;
+        drone.y = pet.y + 30;
       }
     };
 
@@ -718,15 +860,18 @@ export default function JoopsGame() {
             화면을 <span className="text-[#ffd166]">눌러서 슥</span> 끌면
             <br />그 방향으로 <span className="text-[#8ecbff]">분사</span>해요. 멀리 끌수록 강하게!
             <br />
-            잔해를 주워 <span className="text-[#7ee8b2]">kg</span>을 모으고, 연료가 바닥나기 전에
+            잔해를 주워 <span className="text-[#7ee8b2]">kg</span>을 모으면 <span className="text-[#ffd166]">진화</span>하고,
             <br />
-            <span className="text-[#66fcf1]">연료 셀</span>을 먹어요. <span className="text-[#ffce59]">⚠ 경고물</span>은 연료를 깎아요!
+            <span className="text-[#66fcf1]">연료 셀</span>로 재점화해요. <span className="text-[#ffce59]">⚠ 경고물</span>은 연료를 깎아요!
           </p>
+          {/* 팩의 드래그 제스처 힌트 */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/plan/img/pack/ui/gesture_drag.svg" alt="" aria-hidden className="mt-2 h-12 w-12 opacity-90" />
           {ui.best > 0 && <p className="rotate-1 text-lg text-[#ffd166]">최고 기록 {ui.best}kg</p>}
-          <p className="mt-3 animate-bounce text-2xl font-bold text-[#ffd166]">👆 탭해서 출격!</p>
+          <p className="mt-1 animate-bounce text-2xl font-bold text-[#ffd166]">👆 탭해서 출격!</p>
           <Link
             href="/"
-            className="pointer-events-auto mt-5 text-base text-zinc-400 underline underline-offset-4"
+            className="pointer-events-auto mt-4 text-base text-zinc-400 underline underline-offset-4"
           >
             ← 기지로 돌아가기
           </Link>
@@ -742,7 +887,7 @@ export default function JoopsGame() {
             연료 소진…
           </h2>
           <p className="mt-1 text-xl text-zinc-200">
-            잔해 <span className="font-bold text-[#7ee8b2]">{ui.eaten}개</span> 수거 · {ui.sec}초 비행
+            잔해 <span className="font-bold text-[#7ee8b2]">{ui.eaten}개</span> 수거 · {ui.stage}단계 · {ui.sec}초 비행
           </p>
           <p className="mt-3 rotate-1 text-4xl font-bold text-[#ffd166]">{ui.kg}kg</p>
           <p className="text-lg text-zinc-300">

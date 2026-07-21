@@ -1,117 +1,128 @@
 // ============================================================================
-// pilot-sprites — SVG 이미지 로더 (수동 조종 미니게임용)
+// pilot-sprites — SVG 이미지 캐시 + 자산 레지스트리 (수동 조종 미니게임용)
 //
-// 엔티티(우주선·잔해·위험물·연료셀)는 `public/plan/img/`의 SVG로 그린다.
-// 브라우저는 public 아래 파일을 `/plan/img/<name>.svg` 경로로 서빙한다.
-// 이미지가 아직 없거나 로드에 실패해도 게임은 멈추지 않는다 — drawSprite가
-// 종류별 폴백 도형을 대신 그려준다. 그림만 나중에 채워 넣으면 된다.
+// 자산은 satellite_pet_svg_pack 을 통째로 `public/plan/img/pack/` 아래에 두고,
+// 브라우저가 `/plan/img/pack/...` 로 서빙한다. 여기서는 (1) 경로를 만드는 헬퍼와
+// (2) HTMLImageElement 를 한 번만 만들어 캐시하는 로더, (3) 캔버스에 중앙 정렬로
+// 그리는 drawImg 를 제공한다. 로드 실패해도 게임은 멈추지 않는다 — drawImg 가
+// false 를 돌려주므로 호출부가 폴백 도형을 대신 그리면 된다.
 // ============================================================================
 
-export type PilotKind = "ship" | "chip" | "bolt" | "tank" | "hazard" | "fuel";
+const PACK = "/plan/img/pack";
 
-/** 종류 → 서빙 경로. 파일명을 바꾸면 여기만 고치면 된다. */
-export const SPRITE_SRC: Record<PilotKind, string> = {
-  ship: "/plan/img/ship.svg",
-  chip: "/plan/img/debris-chip.svg",
-  bolt: "/plan/img/debris-bolt.svg",
-  tank: "/plan/img/debris-tank.svg",
-  hazard: "/plan/img/hazard.svg",
-  fuel: "/plan/img/fuel.svg",
+export const BG = `${PACK}/background/bg_space_portrait.svg`;
+export const STARS_TILE = `${PACK}/background/stars_tile.svg`;
+
+/** 감정 프리베이크 변형 (파일명 접미사) + "normal"(기본 포즈) */
+export type Emotion =
+  | "normal"
+  | "happy"
+  | "low_battery"
+  | "sulky"
+  | "hibernate"
+  | "powersave"
+  | "data_full";
+
+/** 진화 단계 — 3단계는 자석형(게임의 자석 메커닉과 맞음) */
+export type Stage = 1 | 2 | 3;
+const STAGE_FILE: Record<Stage, string> = {
+  1: "pet_stage1_baby",
+  2: "pet_stage2_junior",
+  3: "pet_stage3_magnet",
 };
 
-/** 폴백 도형 색 — 이미지가 없을 때 종류를 구분해 보여준다. */
-const FALLBACK_COLOR: Record<PilotKind, string> = {
-  ship: "#7ee8b2",
-  chip: "#8ecbff",
-  bolt: "#cfd8e6",
-  tank: "#f9a8d4",
-  hazard: "#ff8080",
-  fuel: "#66fcf1",
-};
-
-export type SpriteBank = Record<PilotKind, HTMLImageElement | null>;
-
-/**
- * 모든 SVG를 미리 불러온다. 로드가 끝날 때마다 onReady로 알려 첫 프레임에
- * 늦게 도착한 그림도 자연스럽게 나타나게 한다. (SSR에서는 빈 뱅크를 돌려준다)
- */
-export function loadSprites(onReady?: () => void): SpriteBank {
-  const bank = {} as SpriteBank;
-  if (typeof window === "undefined") {
-    (Object.keys(SPRITE_SRC) as PilotKind[]).forEach((k) => (bank[k] = null));
-    return bank;
-  }
-  for (const kind of Object.keys(SPRITE_SRC) as PilotKind[]) {
-    const img = new Image();
-    img.decoding = "async";
-    img.onload = () => onReady?.();
-    img.onerror = () => {
-      bank[kind] = null; // 폴백 도형으로 넘어간다
-    };
-    img.src = SPRITE_SRC[kind];
-    bank[kind] = img;
-  }
-  return bank;
+export function petSrc(stage: Stage, emo: Emotion): string {
+  const base = STAGE_FILE[stage];
+  return emo === "normal"
+    ? `${PACK}/characters/${base}.svg`
+    : `${PACK}/characters/emotions/${base}__${emo}.svg`;
 }
 
-const ready = (img: HTMLImageElement | null): img is HTMLImageElement =>
-  !!img && img.complete && img.naturalWidth > 0;
+export function droneSrc(emo: Emotion = "happy"): string {
+  return emo === "normal"
+    ? `${PACK}/characters/support_drone.svg`
+    : `${PACK}/characters/emotions/support_drone__${emo}.svg`;
+}
+
+export const debrisSrc = (name: string) => `${PACK}/debris/${name}.svg`;
+
+/** 크기 티어별 잔해 그림 후보 — 스폰 때 하나를 골라 다양성을 준다 */
+export const DEBRIS_SPRITES = {
+  small: ["chip", "nut", "antenna_piece"],
+  medium: ["bolt", "gear"],
+  large: ["solar_fragment"],
+};
+
+export const FUEL_SRC = `${PACK}/debris/fuel_tank.svg`;
+
+export const FX = {
+  ring: `${PACK}/effects/fx_collect_ring.svg`,
+  sparkle: `${PACK}/effects/fx_sparkle.svg`,
+  heart: `${PACK}/effects/fx_heart_pop.svg`,
+  alert: `${PACK}/effects/fx_alert.svg`,
+  magnet: `${PACK}/effects/fx_magnet_field.svg`,
+  zzz: `${PACK}/effects/fx_zzz.svg`,
+};
+
+export const UI = {
+  battery: `${PACK}/ui/stat_battery.svg`,
+  coin: `${PACK}/ui/coin_scrap.svg`,
+  evo: `${PACK}/ui/evo_crystal.svg`,
+  drag: `${PACK}/ui/gesture_drag.svg`,
+};
+
+// ---------------------------------------------------------------- 이미지 캐시
+
+const cache: Map<string, HTMLImageElement> | null =
+  typeof window !== "undefined" ? new Map() : null;
+let readyCb: (() => void) | undefined;
+
+/** 새 스프라이트가 로드될 때마다 호출(늦게 도착한 그림도 다음 프레임에 나타나게) */
+export function setOnSpriteReady(cb: () => void) {
+  readyCb = cb;
+}
+
+export function img(src: string): HTMLImageElement | null {
+  if (!cache) return null;
+  let im = cache.get(src);
+  if (!im) {
+    im = new Image();
+    im.decoding = "async";
+    im.onload = () => readyCb?.();
+    im.src = src;
+    cache.set(src, im);
+  }
+  return im;
+}
+
+/** 자주 쓰는 자산을 미리 데운다 */
+export function preload(srcs: string[]) {
+  srcs.forEach(img);
+}
+
+const ok = (im: HTMLImageElement | null): im is HTMLImageElement =>
+  !!im && im.complete && im.naturalWidth > 0;
 
 /**
- * (cx, cy)를 중심으로 지정 크기(px, 한 변)로 스프라이트를 그린다. rot(라디안)만큼
- * 회전. 이미지가 준비되지 않았으면 종류별 폴백 도형을 그린다. 호출자는 save/restore를
- * 신경 쓸 필요 없다 — 내부에서 좌표계를 복원한다.
+ * (cx, cy) 중앙에 한 변 px 로 그린다. rot(라디안) 회전, alpha 곱연산.
+ * 이미지가 준비 안 됐으면 아무것도 그리지 않고 false 를 돌려준다.
  */
-export function drawSprite(
+export function drawImg(
   ctx: CanvasRenderingContext2D,
-  bank: SpriteBank,
-  kind: PilotKind,
+  src: string,
   cx: number,
   cy: number,
   px: number,
   rot = 0,
-) {
+  alpha = 1,
+): boolean {
+  const im = img(src);
+  if (!ok(im)) return false;
   ctx.save();
+  ctx.globalAlpha *= alpha;
   ctx.translate(cx, cy);
   if (rot) ctx.rotate(rot);
-  const img = bank[kind];
-  if (ready(img)) {
-    ctx.drawImage(img, -px / 2, -px / 2, px, px);
-  } else {
-    drawFallback(ctx, kind, px);
-  }
+  ctx.drawImage(im, -px / 2, -px / 2, px, px);
   ctx.restore();
-}
-
-/** 이미지가 없을 때의 임시 도형. 원점 중심, 한 변 px. */
-function drawFallback(ctx: CanvasRenderingContext2D, kind: PilotKind, px: number) {
-  const r = px / 2;
-  const c = FALLBACK_COLOR[kind];
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = "rgba(0,0,0,0.35)";
-  ctx.fillStyle = c;
-  if (kind === "hazard") {
-    ctx.beginPath();
-    for (let i = 0; i < 16; i++) {
-      const a = (i / 16) * Math.PI * 2 - Math.PI / 2;
-      const rr = i % 2 === 0 ? r : r * 0.5;
-      const fn = i === 0 ? "moveTo" : "lineTo";
-      ctx[fn](Math.cos(a) * rr, Math.sin(a) * rr);
-    }
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  } else if (kind === "fuel" || kind === "tank" || kind === "chip") {
-    const w = px * 0.7;
-    const h = kind === "chip" ? px * 0.7 : px * 0.9;
-    ctx.beginPath();
-    ctx.rect(-w / 2, -h / 2, w, h);
-    ctx.fill();
-    ctx.stroke();
-  } else {
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.85, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-  }
+  return true;
 }
